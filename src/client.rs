@@ -6,15 +6,13 @@ use std::thread;
 use netfunc::{send_packet,recv_packet};
 
 struct PeerModel {
-    socket_recv: UdpSocket,
-    socket_send: UdpSocket,
+    socket: UdpSocket,
 }
 
 impl PeerModel {
-    pub fn _new(recv_addr: String, send_addr: String) -> Self{
+    pub fn _new(host_addr: String) -> Self{
         PeerModel {
-            socket_recv: UdpSocket::bind(recv_addr).unwrap(),
-            socket_send: UdpSocket::bind(send_addr).unwrap(),
+            socket: UdpSocket::bind(host_addr).unwrap()
         }
     }
     
@@ -22,14 +20,14 @@ impl PeerModel {
         loop {
             let mut buffer = String::new();
             io::stdin().read_line(&mut buffer).expect("Failed to read message");
-            send_packet(buffer, &self.socket_send, &ext_addr);
+            send_packet(buffer, &self.socket, &ext_addr);
         }
     }
     
     pub fn _receive(&self){
         loop{
             let buffer = String::new();
-            recv_packet(&buffer, &self.socket_recv);
+            recv_packet(&buffer, &self.socket);
         }
     }
 }
@@ -37,9 +35,9 @@ impl PeerModel {
 struct Peer { model: Arc<PeerModel> }
 
 impl Peer {
-    pub fn new(recv_addr: String, send_addr: String) -> Self {
+    pub fn new(recv_addr: String) -> Self {
         Peer {
-            model: Arc::new(PeerModel::_new(recv_addr, send_addr))
+            model: Arc::new(PeerModel::_new(recv_addr))
         }
     }
 
@@ -57,20 +55,17 @@ impl Peer {
 fn main() {
 
     // Sample Inputs:
-    // Client 1: cargo run --bin client -- "127.0.0.1:8080" "127.0.0.1:8081" "127.0.0.1:8082"
-    // Client 2: cargo run --bin client -- "127.0.0.1:8083" "127.0.0.1:8082" "127.0.0.1:8081"
-    // Receive and External have to be matching.
+    // Client 1: cargo run --bin client -- "127.0.0.1:8081" "127.0.0.1:8082"
+    // Client 2: cargo run --bin client -- "127.0.0.1:8082" "127.0.0.1:8081"
 
     let args: Vec<String> = env::args().collect();
-    println!("Send Socket Address: {:?}", args[1]);
-    println!("Receive Socket Address: {:?}", args[2]);
-    println!("External Host Address: {:?}", args[3]);
+    println!("Client Host Address: {:?}", args[1]);
+    println!("External Host Address: {:?}", args[2]);
     
-    let haddr_send = args[1].clone();
-    let haddr_recv = args[2].clone();   
-    let addr = args[3].clone();    
+    let host_addr = args[1].clone();   
+    let ext_addr = args[2].clone();    
     
-    let peer = Peer::new(haddr_recv, haddr_send);
-    peer.start(addr);
+    let peer = Peer::new(host_addr);
+    peer.start(ext_addr);
 }
 
