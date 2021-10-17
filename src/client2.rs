@@ -33,10 +33,10 @@ use netfunc::{send_packet,recv_packet};
 
 fn main() {
     // Setup 2 sockets, one for send and another for recv
-    let haddr_send = "127.0.0.1:8082";
+    let haddr_send = "127.0.0.1:8083";
 
-    let haddr_recv = "127.0.0.1:8081";   // Host
-    let addr = "127.0.0.1:8080";    // Other peer
+    let haddr_recv = "127.0.0.1:8080";   // Host
+    let addr = "127.0.0.1:8081";    // Other peer
     
     let socket_recv = UdpSocket::bind(haddr_recv).unwrap();
     let socket_send = UdpSocket::bind(haddr_send).unwrap();

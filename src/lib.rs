@@ -2,18 +2,18 @@ use std::net::UdpSocket;
 
 /// Sends a packet to another peer.
 /// 
-/// # Arguments
+/// ### Arguments
 /// 
 /// * `socket`- Socket that is bound to the sender.
 /// * `addr` - The address of the other peer.
-pub fn send_packet(buffer: String, socket: UdpSocket, addr: &str) {
+pub fn send_packet(buffer: String, socket: &UdpSocket, addr: &str) {
     let buff = buffer.as_bytes();
-    socket.send_to(buff, addr).expect("Not sent");
+    (*socket).send_to(buff, addr).expect("Not sent");
 }
 
 /// Receives a packet from another peer.
 /// 
-/// # Arguments
+/// ### Arguments
 /// 
 /// * `socket`- Socket that is bound to the receiving peer.
 pub fn recv_packet(_buffer:&str, socket: &UdpSocket,) {
