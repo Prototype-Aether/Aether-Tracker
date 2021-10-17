@@ -1,6 +1,6 @@
 use std::net::UdpSocket;
 use std::io;
-// use std::env;
+use std::env;
 use std::sync::Arc;
 use std::thread;
 use netfunc::{send_packet,recv_packet};
@@ -9,8 +9,6 @@ struct PeerModel {
     socket_recv: UdpSocket,
     socket_send: UdpSocket,
 }
-
-struct Peer { model: Arc<PeerModel> }
 
 impl PeerModel {
     pub fn _new(recv_addr: String, send_addr: String) -> Self{
@@ -28,7 +26,6 @@ impl PeerModel {
         }
     }
     
-    // Read this https://stackoverflow.com/questions/67244233/wrapping-asyncread-self-has-an-anonymous-lifetime-but-it-needs-to-satisfy?rq=1
     pub fn _receive(&self){
         loop{
             let buffer = String::new();
@@ -36,6 +33,8 @@ impl PeerModel {
         }
     }
 }
+
+struct Peer { model: Arc<PeerModel> }
 
 impl Peer {
     pub fn new(recv_addr: String, send_addr: String) -> Self {
@@ -56,16 +55,20 @@ impl Peer {
 
 
 fn main() {
-    // let args: Vec<String> = env::args().collect();
-    // println!("Send Socket Address: {:?}", args[1]);
-    // println!("Receive Socket Address: {:?}", args[2]);
-    // println!("External Host Address: {:?}", args[3]);
+
+    // Sample Inputs:
+    // Client 1: cargo run --bin client -- "127.0.0.1:8080" "127.0.0.1:8081" "127.0.0.1:8082"
+    // Client 2: cargo run --bin client -- "127.0.0.1:8083" "127.0.0.1:8082" "127.0.0.1:8081"
+    // Receive and External have to be matching.
+
+    let args: Vec<String> = env::args().collect();
+    println!("Send Socket Address: {:?}", args[1]);
+    println!("Receive Socket Address: {:?}", args[2]);
+    println!("External Host Address: {:?}", args[3]);
     
-    // Setup 2 sockets, one for send and another for recv
-    let haddr_send = String::from("127.0.0.1:8082");
-    
-    let haddr_recv = String::from("127.0.0.1:8081");   // Host
-    let addr = String::from("127.0.0.1:8080");    // Other peer
+    let haddr_send = args[1].clone();
+    let haddr_recv = args[2].clone();   
+    let addr = args[3].clone();    
     
     let peer = Peer::new(haddr_recv, haddr_send);
     peer.start(addr);
