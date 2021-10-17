@@ -1,6 +1,6 @@
 use std::net::UdpSocket;
 use std::io;
-use std::env;
+// use std::env;
 use std::sync::Arc;
 use std::thread;
 use netfunc::{send_packet,recv_packet};
