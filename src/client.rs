@@ -59,6 +59,10 @@ fn main() {
     // Client 2: cargo run --bin client -- "127.0.0.1:8082" "127.0.0.1:8081"
 
     let args: Vec<String> = env::args().collect();
+    if args.len() < 3{
+        println!("Error: Correct format is cargo run --bin client -- \"HostAddress\" \"ExternalHostAddress\"");
+        return;
+    }
     println!("Client Host Address: {:?}", args[1]);
     println!("External Host Address: {:?}", args[2]);
     
