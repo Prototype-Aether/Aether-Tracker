@@ -4,6 +4,7 @@ use std::net::UdpSocket;
 /// 
 /// ### Arguments
 /// 
+/// * `buffer` - Message or data to be sent.
 /// * `socket`- Socket that is bound to the sender.
 /// * `addr` - The address of the other peer.
 pub fn send_packet(buffer: String, socket: &UdpSocket, addr: &str) {
