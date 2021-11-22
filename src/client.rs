@@ -3,7 +3,7 @@ use std::io;
 use std::env;
 use std::sync::Arc;
 use std::thread;
-use netfunc::{send_packet,recv_packet};
+use netfunc::{send_packet,tracker_recv_packet};
 
 struct PeerModel {
     socket: UdpSocket,
@@ -27,7 +27,7 @@ impl PeerModel {
     pub fn _receive(&self){
         loop{
             let buffer = String::new();
-            recv_packet(&buffer, &self.socket);
+            tracker_recv_packet(&buffer, &self.socket);
         }
     }
 }
