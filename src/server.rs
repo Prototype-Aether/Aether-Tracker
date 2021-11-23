@@ -49,13 +49,13 @@ impl Server {
         }
     }
 
-    pub fn start(&self, ext_addr: String){
-        let local_self = self.model.clone();
-        thread::spawn(move || {
-            local_self._receive();
-        });
+    pub fn start(&self, _ext_addr: String){
+        // let local_self = self.model.clone();
+        // thread::spawn(move || {
+            // local_self._receive();
+        // });
+        self.model._receive();
         
-        self.model._send(ext_addr);
     }
 }
 

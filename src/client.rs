@@ -20,7 +20,7 @@ impl PeerModel {
         loop {
             let mut username = String::new();
             io::stdin().read_line(&mut username).expect("Failed to read message");
-            identity_report(username, &self.socket, &ext_addr);
+            identity_report(String::from(username.trim()), &self.socket, &ext_addr);
         }
     }
     
