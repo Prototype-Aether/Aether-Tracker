@@ -3,7 +3,7 @@ use std::io;
 use std::env;
 use std::sync::Arc;
 use std::thread;
-use netfunc::{send_packet,tracker_recv_packet};
+use netfunc::{identity_report,tracker_recv_packet};
 
 struct PeerModel {
     socket: UdpSocket,
@@ -18,9 +18,9 @@ impl PeerModel {
     
     pub fn _send(&self, ext_addr:String){
         loop {
-            let mut buffer = String::new();
-            io::stdin().read_line(&mut buffer).expect("Failed to read message");
-            send_packet(buffer, &self.socket, &ext_addr);
+            let mut username = String::new();
+            io::stdin().read_line(&mut username).expect("Failed to read message");
+            identity_report(username, &self.socket, &ext_addr);
         }
     }
     
@@ -42,10 +42,10 @@ impl Peer {
     }
 
     pub fn start(&self, ext_addr: String){
-        let local_self = self.model.clone();
-        thread::spawn(move || {
-            local_self._receive();
-        });
+        // let local_self = self.model.clone();
+        // thread::spawn(move || {
+            // local_self._send(ext_addr);
+        // });
         
         self.model._send(ext_addr);
     }

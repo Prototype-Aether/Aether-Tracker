@@ -1,7 +1,8 @@
 use std::net::UdpSocket;
 use std::env;
+use std::thread;
 use std::sync::Arc;
-use netfunc::{tracker_send_packet, tracker_recv_packet, TrackerPacket};
+use netfunc::{tracker_send_packet, identity_response, TrackerPacket};
 
 struct ServerModel {
     socket: UdpSocket,
@@ -18,7 +19,7 @@ impl ServerModel {
         loop {
             // let mut buffer = String::new();
             let buffer = TrackerPacket::_new(
-                String::from("monkeywings"), 
+                String::from("monkeywings"),
                 2,
                 false,
                 0,
@@ -34,7 +35,7 @@ impl ServerModel {
     pub fn _receive(&self){
         loop{
             let buffer = String::new();
-            tracker_recv_packet(&buffer, &self.socket);
+            identity_response(&buffer, &self.socket);
         }
     }
 }
@@ -49,10 +50,10 @@ impl Server {
     }
 
     pub fn start(&self, ext_addr: String){
-        // let local_self = self.model.clone();
-        // thread::spawn(move || {
-        //     local_self._receive();
-        // });
+        let local_self = self.model.clone();
+        thread::spawn(move || {
+            local_self._receive();
+        });
         
         self.model._send(ext_addr);
     }
