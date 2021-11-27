@@ -103,7 +103,7 @@ pub fn identity_response(_buffer: &str, socket: &UdpSocket) {
     let data_string = String::from_utf8_lossy(&buff[..amt]);
     let data: TrackerPacket = serde_json::from_str(&data_string).unwrap();
     println!("Received {} bytes from {}", amt, src);
-    println!("Data: {}", data.username);
+    println!("Username Provided: {}", data.username);
 
 
     //
