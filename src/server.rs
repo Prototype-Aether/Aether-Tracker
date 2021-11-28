@@ -9,6 +9,12 @@ struct PeerInfo {
     port: u16
 }
 
+impl PeerInfo {
+    pub fn new(ip_address: [u8; 4], port: u16) -> Self{
+        PeerInfo { ip_address, port }
+    }
+}
+
 struct ServerModel {
     socket: UdpSocket,
     peers: HashMap<String, PeerInfo>
@@ -26,9 +32,12 @@ impl ServerModel {
         loop{
             let buffer = String::new();
             let (username, ip, port) = identity_response(&buffer, &self.socket);
-            self.peers.insert(username, PeerInfo{ip_address:ip, port:port});
-            for key in self.peers.keys() {
-                println!("{}", key);
+            
+            self.peers.insert(username, PeerInfo::new(ip, port));
+
+            println!("\nStorage");
+            for key in self.peers.keys(){
+                println!("Username: {}", key);
             }
         }
     }

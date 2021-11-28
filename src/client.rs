@@ -2,7 +2,7 @@ use std::net::UdpSocket;
 use std::io;
 use std::env;
 use std::sync::Arc;
-// use std::thread;
+use std::{thread, time};
 use netfunc::{identity_report};
 
 struct PeerModel {
@@ -21,8 +21,20 @@ impl PeerModel {
             let mut username = String::new();
             io::stdin().read_line(&mut username).expect("Failed to read message");
             identity_report(String::from(username.trim()), &self.socket, &ext_addr);
+            
         }
     }
+
+    pub fn keepalive(&self, ext_addr:String){
+        let mut username = String::new();
+        io::stdin().read_line(&mut username).expect("Failed to read message");
+        loop {
+            identity_report(String::from(username.trim()), &self.socket, &ext_addr);
+            thread::sleep(time::Duration::from_secs_f32(1.3));
+        }
+    }
+
+    pub fn getpeer(&self, peer_id:String){ }
     
 }
 
@@ -36,7 +48,12 @@ impl Peer {
     }
 
     pub fn start(&self, ext_addr: String){
-        self.model._send(ext_addr);
+        let local_self = self.model.clone();
+        let joinit = thread::spawn(move || {
+            local_self.keepalive(ext_addr);
+        });
+        joinit.join();
+        // self.model._send(ext_addr);
     }
 }
 

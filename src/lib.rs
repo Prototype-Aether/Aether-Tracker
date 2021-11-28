@@ -65,7 +65,8 @@ pub fn identity_report(username: String, socket: &UdpSocket, addr: &str) -> Trac
         data.ip.iter().join("."),
         data.port
     );
-    return data;
+    
+    return data
 }
 
 pub fn identity_response(_buffer: &str, socket: &UdpSocket) -> (String, [u8; 4], u16) {
@@ -75,7 +76,7 @@ pub fn identity_response(_buffer: &str, socket: &UdpSocket) -> (String, [u8; 4],
     let (amt, src) = socket.recv_from(&mut buffer).expect("Not received");
     let data = decode(buffer, amt);
     println!("Received {} bytes from {}", amt, src);
-    println!("Username P: {}", data.username);
+    println!("Username: {}", data.username);
 
 
     // Process Request and send Response
