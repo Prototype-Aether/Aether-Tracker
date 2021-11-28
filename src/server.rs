@@ -39,7 +39,7 @@ impl Server {
 
 fn main() {
 
-    // Sample Inputs:
+    // Sample Input:
     // Server: cargo run --bin server -- "127.0.0.1:8081" 
 
     let args: Vec<String> = env::args().collect();
