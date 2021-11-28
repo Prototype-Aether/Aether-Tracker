@@ -1,57 +1,65 @@
 use std::net::UdpSocket;
 use std::env;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use netfunc::{identity_response};
+use std::collections::HashMap;
+
+struct PeerInfo {
+    ip_address: [u8; 4],
+    port: u16
+}
 
 struct ServerModel {
     socket: UdpSocket,
+    peers: HashMap<String, PeerInfo>
 }
 
 impl ServerModel {
     pub fn _new(host_addr: String) -> Self{
         ServerModel {
-            socket: UdpSocket::bind(host_addr).unwrap()
+            socket: UdpSocket::bind(host_addr).unwrap(),
+            peers: HashMap::new()
         }
     }
     
-    pub fn _receive(&self){
+    pub fn _receive(&mut self){
         loop{
             let buffer = String::new();
-            identity_response(&buffer, &self.socket);
+            let (username, ip, port) = identity_response(&buffer, &self.socket);
+            self.peers.insert(username, PeerInfo{ip_address:ip, port:port});
+            for key in self.peers.keys() {
+                println!("{}", key);
+            }
         }
     }
 }
 
-struct Server { model: Arc<ServerModel> }
+struct Server { model: Arc<Mutex<ServerModel>> }
 
 impl Server {
     pub fn new(recv_addr: String) -> Self {
         Server {
-            model: Arc::new(ServerModel::_new(recv_addr))
+            model: Arc::new(Mutex::new(ServerModel::_new(recv_addr)))
         }
     }
 
     pub fn start(&self){
-        self.model._receive();
+        let mut server = self.model.lock().unwrap();
+        (*server)._receive();
     }
 }
 
 
 fn main() {
 
-    // Sample Input:
-    // Server: cargo run --bin server -- "127.0.0.1:8081" 
-
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2{
-        println!("Error: Correct format is cargo run --bin server -- \"TrackerServerAddress\"");
-        return;
-    }
-    println!("Client Host Address: {:?}", args[1]);
-    
-    let host_addr = args[1].clone();   
-    
-    let server = Server::new(host_addr);
+
+    let port = args[1].clone();
+    let tracker_addr = format!("0.0.0.0:{}", port);
+    println!("Listening on {}", port);
+
+    let server = Server::new(tracker_addr);
     server.start();
+
 }
 
