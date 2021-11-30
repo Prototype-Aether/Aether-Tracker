@@ -70,7 +70,6 @@ impl PeerModel {
                     // Establish connection here
                     let addr = format!("{}:{}", data.ip.iter().join("."), data.port);
                     println!("Sending to {}", addr);
-                    // println!("Received {}", addr);
                     let peer_username = format!("Hey There {}!", data.username);
                     let buffer =
                         encode(String::from(peer_username), 2, false, 2, data.port, data.ip);
@@ -115,8 +114,6 @@ impl Peer {
         thread::spawn(move || {
             listener_thread.listener(false);
         });
-        // joinit.join();
-        // self.model._send(ext_addr);
         let mut peer = String::new();
         println!("Enter peer to connect: ");
         io::stdin()
@@ -127,7 +124,6 @@ impl Peer {
             connection_request(peer.clone(), &self.model.socket, ext_addr.clone());
             thread::sleep(time::Duration::from_secs_f32(2.5));
         }
-        // listener_thread_join.join();
     }
 }
 
