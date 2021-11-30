@@ -19,3 +19,4 @@ path = "src/server.rs"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.64"
 itertools = "0.10.*"
+aether_lib = { git = "https://github.com/Prototype-Aether/Aether-Lib.git", branch = "tracker-packet" }

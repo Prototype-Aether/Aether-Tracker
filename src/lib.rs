@@ -1,80 +1,39 @@
-use serde::{Deserialize, Serialize};
+use aether_lib::tracker::TrackerPacket;
+use std::convert::TryFrom;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 
-#[derive(Serialize, Deserialize)]
-pub struct TrackerPacket {
-    pub username: String,
-    id_num: u32,
-    pub req: bool,
-    pub packet_type: u8,
+pub struct PeerInfo {
+    pub ip_address: [u8; 4],
     pub port: u16,
-    pub ip: [u8; 4],
 }
 
-impl TrackerPacket {
-    pub fn _new(
-        uname: String,
-        id: u32,
-        request: bool,
-        p_type: u8,
-        port_no: u16,
-        ip: [u8; 4],
-    ) -> Self {
-        TrackerPacket {
-            username: uname,
-            id_num: id,
-            req: request,
-            packet_type: p_type,
-            port: port_no,
-            ip: ip,
-        }
+impl PeerInfo {
+    pub fn new(ip_address: [u8; 4], port: u16) -> Self {
+        PeerInfo { ip_address, port }
     }
 }
 
-pub fn encode(
-    username: String,
-    id: u32,
-    request: bool,
-    p_type: u8,
-    port_no: u16,
-    ip: [u8; 4],
-) -> String {
-    let packet = TrackerPacket::_new(username, id, request, p_type, port_no, ip);
-    let buffer = serde_json::to_string(&packet).unwrap();
-    return buffer;
-}
-
-pub fn decode(buffer: [u8; 2048], amt: usize) -> TrackerPacket {
-    let data_string = String::from_utf8_lossy(&buffer[..amt]);
-    let data: serde_json::Result<TrackerPacket> = serde_json::from_str(&data_string);
-    let data = match data {
-        Ok(data_item) => data_item,
-        Err(error) => {
-            // Just for testing, remove message later
-            let message = String::from_utf8_lossy(&buffer[..amt]);
-            panic!(
-                "Error: Could not decode the packet. {}\nMessage Provided:{}",
-                error, message
-            )
-        }
-    };
-    return data;
-}
-
 pub fn identity_report(identity_username: String, socket: &UdpSocket, addr: &str, _verbose: bool) {
-    let buffer = encode(identity_username, 2, true, 0, 8080, [0, 0, 0, 0]);
-    (*socket)
-        .send_to(&buffer.as_bytes(), addr)
-        .expect("Not sent");
+    let packet: TrackerPacket = TrackerPacket {
+        identity_number: 2,
+        peer_username: "".to_string(),
+        connections: Vec::new(),
+        username: identity_username,
+        req: true,
+        packet_type: 0 as u8,
+        port: 8080,
+        ip: [0, 0, 0, 0],
+    };
+    let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
+    (*socket).send_to(&buffer, addr).expect("Not sent");
 }
 
 pub fn identity_response(
     data: TrackerPacket,
     src: SocketAddr,
     socket: &UdpSocket,
-    
-) -> (String, [u8; 4], u16) {
-    println!("{} at {}", src, data.username);
+) -> (String, u32, [u8; 4], u16) {
+    // println!("{} at {}", src, data.username);
 
     // Process Request and send Response
     let addr = src.to_string();
@@ -83,17 +42,38 @@ pub fn identity_response(
         IpAddr::V6(_ip) => unreachable!(),
     };
     let port = src.port();
-    let buffer = encode(data.username.clone(), 2, false, 0, port, ip_bytes);
+    let packet: TrackerPacket = TrackerPacket {
+        identity_number: 2,
+        peer_username: "".to_string(),
+        connections: Vec::new(),
+        username: data.username.clone(),
+        req: false,
+        packet_type: 0 as u8,
+        port: port,
+        ip: ip_bytes,
+    };
+    let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
     (*socket)
-        .send_to(&buffer.as_bytes(), addr.clone())
+        .send_to(&buffer, addr.clone())
         .expect("Not sent");
 
-    return (data.username, ip_bytes, port);
+    return (data.username, data.identity_number, ip_bytes, port);
 }
 
-pub fn connection_request(peer_username: String, socket: &UdpSocket, tracker_addr: String) {
-    let buffer = encode(peer_username, 2, true, 1, 8080, [0, 0, 0, 0]);
+pub fn identity_request(peer_username: String, socket: &UdpSocket, tracker_addr: String) {
+    let packet: TrackerPacket = TrackerPacket {
+        identity_number: 2,
+        peer_username: peer_username,
+        connections: Vec::new(),
+        username: "".to_string(),
+        req: true,
+        packet_type: 1 as u8,
+        port: 8080,
+        ip: [0, 0, 0, 0],
+    };
+    let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
     (*socket)
-        .send_to(&buffer.as_bytes(), tracker_addr)
+        .send_to(&buffer, tracker_addr)
         .expect("Not sent");
 }
+
