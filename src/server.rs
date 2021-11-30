@@ -42,12 +42,14 @@ impl ServerModel {
                     username.retain(|c| !c.is_whitespace());
                     self.peers.insert(username, PeerInfo::new(ip, port));
                 }
+
                 // Reply to Connection Request
                 else if data.packet_type == 1 {
                     println!("Received a request for {}", data.username);
                     let mut username = data.username;
-                    username.retain(|c| !c.is_whitespace());
+                    username.retain(|c| !c.is_whitespace());    // Get rid of whitspaces
 
+                    // Check if peer is stored
                     if self.peers.contains_key(&username) {
                         let peer_info: &PeerInfo = &self.peers[&username];
                         let packet =
@@ -55,14 +57,11 @@ impl ServerModel {
                         (self.socket)
                             .send_to(packet.as_bytes(), src.to_string())
                             .expect("Not sent");
-                    } else {
-                        for key in self.peers.keys() {
-                            println!("{}", key);
-                        }
-                    }
+                    } 
                 }
             }
 
+            // Remove later, just to view stack
             println!("\nStorage");
             for key in self.peers.keys() {
                 println!("Username: {}", key);

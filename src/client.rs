@@ -79,16 +79,9 @@ impl PeerModel {
                         .expect("Not sent");
                 }
 
+                // Just for testing UDP Hole Punching, using username as message
                 if data.packet_type == 2 {
-                    // let addr = format!("{}:{}", data.ip.iter().join("."), data.port);
                     println!("{}", data.username);
-                    // let peer_username = format!("Hey There {}!", data.username);
-                    // let buffer =
-                    //     encode(String::from(peer_username), 2, false, 2, data.port, data.ip);
-                    // (self.socket)
-                    //     .send_to(&buffer.as_bytes(), addr)
-                    //     .expect("Not sent");
-                    // thread::sleep(time::Duration::from_secs_f32(2.5));
                 }
             }
         }
