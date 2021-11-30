@@ -17,27 +17,12 @@ impl PeerModel {
         }
     }
 
-    pub fn _send(&self, ext_addr: String) {
-        loop {
-            let mut username = String::new();
-            io::stdin()
-                .read_line(&mut username)
-                .expect("Failed to read message");
-            identity_report(
-                String::from(username.trim()),
-                &self.socket,
-                &ext_addr,
-                false,
-            );
-        }
-    }
-
-    pub fn keepalive(&self, username: String, ext_addr: String) {
+    pub fn keepalive(&self, username: String, tracker_addr: String) {
         loop {
             identity_report(
                 String::from(username.trim()),
                 &self.socket,
-                &ext_addr,
+                &tracker_addr,
                 false,
             );
             thread::sleep(time::Duration::from_secs_f32(1.3));
@@ -48,7 +33,6 @@ impl PeerModel {
         loop {
             let mut buffer = [0; 2048];
             let (amt, src) = self.socket.recv_from(&mut buffer).expect("Not received");
-            // let data = String::from_utf8_lossy(&buffer[..amt]);
             let data = decode(buffer, amt);
             if !data.req {
                 // I tried using match, but for some reason it doesn't work well with u8
@@ -98,17 +82,17 @@ impl Peer {
         }
     }
 
-    pub fn start(&self, ext_addr: String) {
+    pub fn start(&self, tracker_addr: String) {
         let mut username = String::new();
         io::stdin()
             .read_line(&mut username)
             .expect("Failed to read message");
-        let ext_addr2 = String::from(ext_addr.clone());
+        let tracker_addr_copy = String::from(tracker_addr.clone());
 
         let keepalive_thread = self.model.clone();
         let listener_thread = self.model.clone();
         thread::spawn(move || {
-            keepalive_thread.keepalive(username, ext_addr2.clone());
+            keepalive_thread.keepalive(username, tracker_addr_copy);
         });
 
         thread::spawn(move || {
@@ -121,7 +105,7 @@ impl Peer {
             .expect("Failed to read message");
 
         loop {
-            connection_request(peer.clone(), &self.model.socket, ext_addr.clone());
+            connection_request(peer.clone(), &self.model.socket, tracker_addr.clone());
             thread::sleep(time::Duration::from_secs_f32(2.5));
         }
     }
@@ -142,7 +126,7 @@ fn main() {
     println!("Tracker Address: {:?}", args[2]);
 
     let host_addr = format!("0.0.0.0:{}", args[1]);
-    let ext_addr = args[2].clone();
+    let tracker_addr = args[2].clone();
     let peer = Peer::new(host_addr);
-    peer.start(ext_addr);
+    peer.start(tracker_addr);
 }

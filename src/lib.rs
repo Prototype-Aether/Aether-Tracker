@@ -61,8 +61,8 @@ pub fn decode(buffer: [u8; 2048], amt: usize) -> TrackerPacket {
     return data;
 }
 
-pub fn identity_report(username: String, socket: &UdpSocket, addr: &str, _verbose: bool) {
-    let buffer = encode(username, 2, true, 0, 8080, [0, 0, 0, 0]);
+pub fn identity_report(identity_username: String, socket: &UdpSocket, addr: &str, _verbose: bool) {
+    let buffer = encode(identity_username, 2, true, 0, 8080, [0, 0, 0, 0]);
     (*socket)
         .send_to(&buffer.as_bytes(), addr)
         .expect("Not sent");
@@ -88,13 +88,11 @@ pub fn identity_response(
         .send_to(&buffer.as_bytes(), addr.clone())
         .expect("Not sent");
 
-    // Return username, ip and port
     return (data.username, ip_bytes, port);
 }
 
-pub fn connection_request(username: String, socket: &UdpSocket, tracker_addr: String) {
-    // Send the Request
-    let buffer = encode(username, 2, true, 1, 8080, [0, 0, 0, 0]);
+pub fn connection_request(peer_username: String, socket: &UdpSocket, tracker_addr: String) {
+    let buffer = encode(peer_username, 2, true, 1, 8080, [0, 0, 0, 0]);
     (*socket)
         .send_to(&buffer.as_bytes(), tracker_addr)
         .expect("Not sent");
