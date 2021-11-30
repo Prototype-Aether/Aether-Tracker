@@ -2,7 +2,6 @@ use netfunc::{decode, encode, identity_response};
 use std::collections::HashMap;
 use std::env;
 use std::net::UdpSocket;
-use std::sync::{Arc, Mutex};
 
 struct PeerInfo {
     ip_address: [u8; 4],
@@ -15,20 +14,20 @@ impl PeerInfo {
     }
 }
 
-struct ServerModel {
+struct TrackerServer {
     socket: UdpSocket,
     peers: HashMap<String, PeerInfo>,
 }
 
-impl ServerModel {
-    pub fn _new(host_addr: String) -> Self {
-        ServerModel {
+impl TrackerServer {
+    pub fn new(host_addr: String) -> Self {
+        TrackerServer {
             socket: UdpSocket::bind(host_addr).unwrap(),
             peers: HashMap::new(),
         }
     }
 
-    pub fn _receive(&mut self) {
+    pub fn start(&mut self) {
         loop {
             // Receive Report Request
             let mut buffer = [0; 2048];
@@ -42,22 +41,24 @@ impl ServerModel {
                     username.retain(|c| !c.is_whitespace());
                     self.peers.insert(username, PeerInfo::new(ip, port));
                 }
-
                 // Reply to Connection Request
                 else if data.packet_type == 1 {
                     println!("Received a request for {}", data.username);
                     let mut username = data.username;
-                    username.retain(|c| !c.is_whitespace());    // Get rid of whitspaces
+                    username.retain(|c| !c.is_whitespace()); // Get rid of whitspaces
 
                     // Check if peer is stored
-                    if self.peers.contains_key(&username) {
-                        let peer_info: &PeerInfo = &self.peers[&username];
-                        let packet =
-                            encode(username, 2, false, 1, peer_info.port, peer_info.ip_address);
-                        (self.socket)
-                            .send_to(packet.as_bytes(), src.to_string())
-                            .expect("Not sent");
-                    } 
+                    let peer_info = self.peers.get(&username);
+                    match peer_info {
+                        None => {},
+                        Some(peer_info) => {
+                            let packet =
+                                encode(username, 2, false, 1, peer_info.port, peer_info.ip_address);
+                            (self.socket)
+                                .send_to(packet.as_bytes(), src.to_string())
+                                .expect("Not sent");
+                        }
+                    };
                 }
             }
 
@@ -68,24 +69,9 @@ impl ServerModel {
             }
         }
     }
+
 }
 
-struct Server {
-    model: Arc<Mutex<ServerModel>>,
-}
-
-impl Server {
-    pub fn new(recv_addr: String) -> Self {
-        Server {
-            model: Arc::new(Mutex::new(ServerModel::_new(recv_addr))),
-        }
-    }
-
-    pub fn start(&self) {
-        let mut server = self.model.lock().unwrap();
-        (*server)._receive();
-    }
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -94,6 +80,6 @@ fn main() {
     let tracker_addr = format!("0.0.0.0:{}", port);
     println!("Listening on {}", port);
 
-    let server = Server::new(tracker_addr);
+    let mut server = TrackerServer::new(tracker_addr);
     server.start();
 }
