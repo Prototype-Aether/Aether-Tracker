@@ -1,6 +1,6 @@
 use aether_lib::tracker::TrackerPacket;
 use itertools::Itertools;
-use netfunc::{identity_report, identity_request, PeerInfo};
+use netfunc::{identity_report, identity_request, connection_poll, PeerInfo};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env;
@@ -11,21 +11,23 @@ use std::{thread, time};
 
 struct PeerModel {
     socket: UdpSocket,
-    _peer: HashMap<String, PeerInfo>,
+    peer: HashMap<String, PeerInfo>,
+    requests: HashMap<String, u32>
 }
 
 impl PeerModel {
     pub fn _new(host_addr: String) -> Self {
         PeerModel {
             socket: UdpSocket::bind(host_addr).unwrap(),
-            _peer: HashMap::new(),
+            peer: HashMap::new(),
+            requests: Vec::new()
         }
     }
 
-    pub fn keepalive(&self, username: String, tracker_addr: String) {
+    pub fn keepalive(&self, username: String, tracker_addr: String, identity_number: u32) {
         loop {
-            identity_request(username.clone(), &self.socket, tracker_addr.clone());
-            thread::sleep(time::Duration::from_secs_f32(1.3));
+            connection_poll(username.clone(), identity_number, &self.socket, tracker_addr.clone());
+            thread::sleep(time::Duration::from_secs_f32(2.0));
         }
     }
 
@@ -36,33 +38,67 @@ impl PeerModel {
             let data: TrackerPacket = TryFrom::try_from(buffer[..amt].to_vec()).unwrap();
 
             if !data.req {
-                // For Connection Response
-                if data.packet_type == 1 {
-                    // Establish connection here
-                    let addr = format!("{}:{}", data.ip.iter().join("."), data.port);
-                    println!("Sending to {}", addr);
-                    let peer_username = format!("Hey There {}!", data.username);
-                    
-                    let packet: TrackerPacket = TrackerPacket {
-                        identity_number: 2,
-                        peer_username: peer_username.clone(),
-                        connections: Vec::new(),
-                        username: peer_username.clone(),
-                        req: false,
-                        packet_type: 5 as u8,
-                        port: data.port,
-                        ip: data.ip,
-                    };
-                    let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
+                match Option::from(data.packet_type) {
 
-                    (self.socket)
-                        .send_to(&buffer, addr)
-                        .expect("Not sent");
-                }
+                    // Process Response to Identity Request
+                    Some(1) => {
+                        // Establish connection here
+                        let addr = format!("{}:{}", data.ip.iter().join("."), data.port);
+                        println!("Sending to {}", addr);
+                        let peer_username = format!("Hey There {}!", data.username);
 
-                // Just for testing UDP Hole Punching, using username as message
-                if data.packet_type == 5 {
-                    println!("{}", data.username);
+                        let packet: TrackerPacket = TrackerPacket {
+                            identity_number: 2,
+                            peer_username: peer_username.clone(),
+                            connections: Vec::new(),
+                            username: peer_username.clone(),
+                            req: false,
+                            packet_type: 5 as u8,
+                            port: data.port,
+                            ip: data.ip,
+                        };
+                        let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
+
+                        (self.socket).send_to(&buffer, addr).expect("Not sent");
+                    }
+
+                    // Process response to Connection Poll
+                    Some(3) => {
+                        if data.connections.is_empty(){
+                        }
+                        else {
+                            for connection in data.connections.iter(){
+                                match self.requests.get(&connection.username){
+                                    None => {
+                                        // Spawn a new connection request
+                                    }
+                                    Some(conn) => {
+                                        let packet: TrackerPacket = TrackerPacket {
+                                            identity_number: data.identity_number,
+                                            peer_username: "".to_string(),
+                                            connections: Vec::new(),
+                                            username: "Hey we did it!".to_string(),
+                                            req: false,
+                                            packet_type: 5 as u8,
+                                            port: 0000,
+                                            ip: [0, 0, 0, 0],
+                                        };
+                                        let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
+                                        let addr = format!("{}:{}", connection.ip.iter().join("."), connection.port);
+                                        (self.socket)
+                                            .send_to(&buffer, addr)
+                                            .expect("Not sent");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Just a test
+                    Some(5) => {
+                        println!("{}", data.username);
+                    }
+                    _ => {}
                 }
             }
         }

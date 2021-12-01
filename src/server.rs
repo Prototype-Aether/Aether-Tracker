@@ -1,13 +1,14 @@
-use aether_lib::tracker::TrackerPacket;
-use netfunc::{identity_response, PeerInfo};
+use aether_lib::tracker::{ConnectionRequest, TrackerPacket};
+use netfunc::{identity_confirm, PeerInfo};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env;
-use std::net::UdpSocket;
+use std::net::{IpAddr, UdpSocket};
 
 struct TrackerServer {
     socket: UdpSocket,
     peers: HashMap<String, PeerInfo>,
+    requests: HashMap<String, Vec<ConnectionRequest>>,
 }
 
 impl TrackerServer {
@@ -15,7 +16,14 @@ impl TrackerServer {
         TrackerServer {
             socket: UdpSocket::bind(host_addr).unwrap(),
             peers: HashMap::new(),
+            requests: HashMap::new(),
         }
+    }
+
+    pub fn store_peer(&mut self, username: String, identity_number: u32, ip: [u8; 4], port: u16) {
+        println!("Username to be added: {}", username);
+        let key = format!("{}{}", username, identity_number);
+        self.peers.insert(key, PeerInfo::new(ip, port));
     }
 
     pub fn start(&mut self) {
@@ -26,45 +34,80 @@ impl TrackerServer {
             let data: TrackerPacket = TryFrom::try_from(buffer[..amt].to_vec()).unwrap();
 
             if data.req {
-                // Reply to Identity Request
-                if data.packet_type == 0 {
-                    let (mut username, identity_number, ip, port) = identity_response(data, src, &self.socket);
-                    username.retain(|c| !c.is_whitespace());
-                    println!("Username to be added: {}", username);
-                    let key = format!("{}{}", username, identity_number);
-                    self.peers.insert(key, PeerInfo::new(ip, port));
-                } else if data.packet_type == 2 {
-                    println!("{} is polling.", data.username);
-                }
-                // Reply to Connection Request
-                else if data.packet_type == 1 {
-                    println!("Received a request for {}", data.peer_username);
-                    let mut username = data.peer_username;
-                    username.retain(|c| !c.is_whitespace()); // Get rid of whitspaces
+                match Option::from(data.packet_type) {
+                    // Process Identity Report
+                    Some(0) => {
+                        let (username, identity_number, ip, port) =
+                            identity_confirm(data, src, &self.socket);
+                        self.store_peer(username, identity_number, ip, port);
+                    }
 
-                    let key = format!("{}{}",username, data.identity_number);
+                    // Process Identity Request
+                    Some(1) => {
+                        println!("Received a request for {}", data.peer_username);
 
-                    // Check if peer is stored
-                    let peer_info = self.peers.get(&key);
-                    match peer_info {
-                        None => {}
-                        Some(peer_info) => {
-                            let packet: TrackerPacket = TrackerPacket {
-                                identity_number: 2,
-                                peer_username: "".to_string(),
-                                connections: Vec::new(),
-                                username: username,
-                                req: false,
-                                packet_type: 1 as u8,
-                                port: peer_info.port,
-                                ip: peer_info.ip_address,
-                            };
-                            let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
-                            (self.socket)
-                                .send_to(&buffer, src.to_string())
-                                .expect("Not sent");
-                        }
-                    };
+                        let key = format!("{}{}", data.peer_username, data.identity_number);
+
+                        // Check if peer is stored
+                        let peer_info = self.peers.get(&key);
+                        match peer_info {
+                            None => {}
+                            Some(peer_info) => {
+                                let packet: TrackerPacket = TrackerPacket {
+                                    identity_number: 2,
+                                    peer_username: "".to_string(),
+                                    connections: Vec::new(),
+                                    username: data.peer_username,
+                                    req: false,
+                                    packet_type: 1 as u8,
+                                    port: peer_info.port,
+                                    ip: peer_info.ip_address,
+                                };
+                                let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
+                                (self.socket)
+                                    .send_to(&buffer, src.to_string())
+                                    .expect("Not sent");
+                            }
+                        };
+                    }
+                    Some(2) => {
+                        let ip_bytes = match src.ip() {
+                            IpAddr::V4(ip) => ip.octets(),
+                            IpAddr::V6(_ip) => unreachable!(),
+                        };
+                        let connection: ConnectionRequest = ConnectionRequest {
+                            identity_number: data.identity_number,
+                            username: data.username,
+                            port: src.port(),
+                            ip: ip_bytes,
+                        };
+                        
+                        self.requests.entry(data.peer_username).or_insert(Vec::new()).push(connection);
+                    }
+
+                    Some(3) => {
+                        let connection_list = self.requests.get(&data.username);
+                        let connection_list: Vec<ConnectionRequest> = match connection_list {
+                            None => {Vec::new()},
+                            Some(conn_list) => {conn_list.clone()}
+                        };
+
+                        let packet: TrackerPacket = TrackerPacket {
+                            identity_number: 2,
+                            peer_username: "".to_string(),
+                            connections: connection_list.clone(),
+                            username: data.peer_username,
+                            req: false,
+                            packet_type: 3 as u8,
+                            port: 0000,
+                            ip: [0, 0, 0, 0],
+                        };
+                        let buffer: Vec<u8> = TryFrom::try_from(packet).unwrap();
+                        (self.socket)
+                            .send_to(&buffer, src.to_string())
+                            .expect("Not sent");
+                    }
+                    _ => {}
                 }
             }
 
