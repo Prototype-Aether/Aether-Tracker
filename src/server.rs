@@ -81,15 +81,22 @@ impl TrackerServer {
                             port: src.port(),
                             ip: ip_bytes,
                         };
-                        
-                        self.requests.entry(data.peer_username).or_insert(Vec::new()).push(connection);
+
+                        let requests_list = self
+                            .requests
+                            .entry(data.peer_username)
+                            .or_insert(Vec::new());
+
+                        if !requests_list.contains(&connection) {
+                            requests_list.push(connection);
+                        }
                     }
 
                     Some(3) => {
                         let connection_list = self.requests.get(&data.username);
                         let connection_list: Vec<ConnectionRequest> = match connection_list {
-                            None => {Vec::new()},
-                            Some(conn_list) => {conn_list.clone()}
+                            None => Vec::new(),
+                            Some(conn_list) => conn_list.clone(),
                         };
 
                         let packet: TrackerPacket = TrackerPacket {
