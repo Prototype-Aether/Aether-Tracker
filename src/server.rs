@@ -26,18 +26,30 @@ impl TrackerServer {
         self.peers.insert(key, PeerInfo::new(ip, port));
     }
     // pub fn check_and_add(&mut self, request_list )
-    pub fn check_and_add(
-        request_list: &mut Vec<ConnectionRequest>,
-        new_request: ConnectionRequest,
-    ) {
-        request_list.push(new_request.clone());
-        for request in request_list {
-            if (*request).username == new_request.username
-                && (*request).identity_number == new_request.identity_number
-            {
-                (*request).ip = new_request.ip;
-                (*request).port = new_request.port;
-                return;
+    pub fn check_and_add(&mut self, key_username: String, new_request: ConnectionRequest) {
+        print!("Checking and adding: {:?}", new_request);
+        match self.requests.get_mut(&key_username) {
+            Some(request_list) => {
+                let mut i = 0;
+                loop {
+                    if request_list[i].identity_number == new_request.identity_number
+                        && request_list[i].username == new_request.username
+                    {
+                        request_list[i].ip = new_request.ip;
+                        request_list[i].port = new_request.port;
+                        println!("Request updated");
+                        return;
+                    }
+                    i += 1;
+                }
+            }
+
+            None => {
+                self.requests
+                    .entry(key_username)
+                    .or_insert(Vec::new())
+                    .push(new_request);
+                println!("Request added");
             }
         }
     }
@@ -97,15 +109,17 @@ impl TrackerServer {
                             ip: ip_bytes,
                         };
 
-                        let requests_list = self
-                            .requests
-                            .entry(data.peer_username)
-                            .or_insert(Vec::new());
+                        // let requests_list = self
+                        //     .requests
+                        //     .entry(data.peer_username)
+                        //     .or_insert(Vec::new());
 
                         // if !requests_list.contains(&connection) {
                         //     requests_list.push(connection);
                         // }
-                        TrackerServer::check_and_add(requests_list, connection);
+                        println!("Before : {:?}", self.requests);
+                        self.check_and_add(data.peer_username, connection);
+                        println!("After : {:?}", self.requests);
                     }
 
                     Some(3) => {
