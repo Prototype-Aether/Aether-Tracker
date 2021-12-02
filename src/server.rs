@@ -25,7 +25,22 @@ impl TrackerServer {
         let key = format!("{}{}", username, identity_number);
         self.peers.insert(key, PeerInfo::new(ip, port));
     }
-
+    // pub fn check_and_add(&mut self, request_list )
+    pub fn check_and_add(
+        request_list: &mut Vec<ConnectionRequest>,
+        new_request: ConnectionRequest,
+    ) {
+        request_list.push(new_request.clone());
+        for request in request_list {
+            if (*request).username == new_request.username
+                && (*request).identity_number == new_request.identity_number
+            {
+                (*request).ip = new_request.ip;
+                (*request).port = new_request.port;
+                return;
+            }
+        }
+    }
     pub fn start(&mut self) {
         loop {
             // Receive Report Request
@@ -87,9 +102,10 @@ impl TrackerServer {
                             .entry(data.peer_username)
                             .or_insert(Vec::new());
 
-                        if !requests_list.contains(&connection) {
-                            requests_list.push(connection);
-                        }
+                        // if !requests_list.contains(&connection) {
+                        //     requests_list.push(connection);
+                        // }
+                        TrackerServer::check_and_add(requests_list, connection);
                     }
 
                     Some(3) => {
