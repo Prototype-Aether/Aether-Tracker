@@ -32,6 +32,9 @@ impl TrackerServer {
             Some(request_list) => {
                 let mut i = 0;
                 loop {
+                    if i >= request_list.len() {
+                        break;
+                    }
                     if request_list[i].identity_number == new_request.identity_number
                         && request_list[i].username == new_request.username
                     {
