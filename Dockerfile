@@ -1,4 +1,4 @@
-FROM rust:latest
+FROM rust:1.58
 
 WORKDIR /usr/src/aether-tracker
 
