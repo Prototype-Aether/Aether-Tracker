@@ -1,0 +1,12 @@
+version: "3"
+services:
+  tracker:
+    build: 
+      context: .
+    image: "rust:1.58"
+    volumes:
+      - .:/Aether-Tracker
+    environment:
+      - USER=monkey
+    ports:
+      - "${TRACKER_PORT}:${TRACKER_PORT}/udp"
