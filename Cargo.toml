@@ -8,15 +8,15 @@ name = "netfunc"
 path = "src/lib.rs"
 
 [[bin]]
-name = "client"
-path = "src/client.rs"
-
-[[bin]]
 name = "server"
 path = "src/server.rs"
+
+[env]
+TRACKER_PORT=8982
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.64"
 itertools = "0.10.*"
 aether_lib = { git = "https://github.com/Prototype-Aether/Aether-Lib.git" }
+dotenv = "0.15.0"

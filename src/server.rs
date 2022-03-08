@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env;
 use std::net::{IpAddr, UdpSocket};
+use dotenv::dotenv;
 
 struct TrackerServer {
     socket: UdpSocket,
@@ -147,9 +148,8 @@ impl TrackerServer {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    let port = args[1].clone();
+    dotenv().ok();
+    let port = env::var("TRACKER_PORT").expect("TRACKER_PORT not defined as ENV variable.");
     let tracker_addr = format!("0.0.0.0:{}", port);
     println!("Listening on {}", port);
 
