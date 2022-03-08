@@ -9,4 +9,4 @@ services:
     environment:
       - USER=monkey
     ports:
-      - "8982:8982/udp"
+      - "${TRACKER_PORT}:${TRACKER_PORT}/udp"
