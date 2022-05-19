@@ -34,7 +34,6 @@ impl TrackerServer {
             if (*request).username == new_request.username
                 && (*request).identity_number == new_request.identity_number
             {
-                println!("same");
                 (*request).ip = new_request.ip;
                 (*request).port = new_request.port;
                 return None;
@@ -87,6 +86,8 @@ impl TrackerServer {
                         };
                     }
                     Some(2) => {
+                        let x = data.peer_username.clone();
+                        println!("Received a request for {}", &x[(x.len() - 8)..]);
                         let ip_bytes = match src.ip() {
                             IpAddr::V4(ip) => ip.octets(),
                             IpAddr::V6(_ip) => unreachable!(),
@@ -107,11 +108,11 @@ impl TrackerServer {
                             Some(conn) => requests_list.push(conn),
                             None => (),
                         }
-
-                        println!("{:?}", requests_list);
                     }
 
                     Some(3) => {
+                        let x = data.username.clone();
+                        println!("Poll from {}", &x[(x.len() - 8)..]);
                         let connection_list = self.requests.get(&data.username);
                         let connection_list: Vec<ConnectionRequest> = match connection_list {
                             None => Vec::new(),
@@ -135,12 +136,6 @@ impl TrackerServer {
                     }
                     _ => {}
                 }
-            }
-
-            // Remove later, just to view stack
-            println!("\nStorage");
-            for key in self.peers.keys() {
-                println!("Username: {}", key);
             }
         }
     }
