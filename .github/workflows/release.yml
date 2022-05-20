@@ -2,7 +2,7 @@ name: Publish Release
 
 on:
   push:
-    branches: [ automated-release-test ]
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
