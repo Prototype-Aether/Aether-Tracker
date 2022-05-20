@@ -16,7 +16,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Build Release Binary
-        run: cargo build --release
+        id: build
+        run: |
+          cargo build --release --target x86_64-unknown-linux-gnu
+          # get the mimetype of the application
+          mimetype=$(file --mime-type target/x86_64-unknown-linux-gnu/release/server | cut -d':' -f2 | xargs)
+          echo "::set-output name=mimetype::$mimetype"
       - name: Create Tag
         id: create_tag
         run: |
@@ -42,9 +47,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/release/server
-          asset_name: aether-tracker-server
-          asset_content_type: application/x-pie-executable
+          asset_path: target/x86_64-unknown-linux-gnu/release/server
+          asset_name: aether-tracker-server-x86_64-unknown-linux-gnu
+          asset_content_type: ${{ steps.build.mimetype }}
       - name: Publish Release
         uses: eregon/publish-release@v1
         env:
