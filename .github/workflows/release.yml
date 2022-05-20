@@ -49,7 +49,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: target/x86_64-unknown-linux-gnu/release/server
           asset_name: aether-tracker-server-x86_64-unknown-linux-gnu
-          asset_content_type: ${{ steps.build.mimetype }}
+          asset_content_type: ${{ steps.build.outputs.mimetype }}
       - name: Publish Release
         uses: eregon/publish-release@v1
         env:
