@@ -1,10 +1,8 @@
-name: Build
+name: Publish Release
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main, staged ]
+    branches: [ automated-release-test ]
 
 env:
   CARGO_TERM_COLOR: always
