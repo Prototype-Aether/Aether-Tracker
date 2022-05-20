@@ -22,6 +22,10 @@ jobs:
         run: |
           tag=v$(cat Cargo.toml | cat Cargo.toml | grep "^version" | head -1 | sed "s/version = //" | sed "s/\"//g")
           echo "::set-output name=tag::$tag"
+      - name: Delete Existing
+        uses: cb80/delrel@latest
+        with:
+          tag: ${{steps.create_tag.outputs.tag}}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -31,7 +35,7 @@ jobs:
           tag_name: ${{steps.create_tag.outputs.tag}}
           release_name: ${{steps.create_tage.outputs.tag}}
           draft: true
-          prerelease: false
+          prerelease: true
       - name: Upload Release
         uses: actions/upload-release-asset@v1.0.1
         env:
