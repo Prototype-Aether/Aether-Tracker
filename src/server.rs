@@ -1,10 +1,10 @@
 use aether_lib::tracker::{ConnectionRequest, TrackerPacket};
+use dotenv::dotenv;
 use netfunc::{identity_confirm, PeerInfo};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::env;
 use std::net::{IpAddr, UdpSocket};
-use dotenv::dotenv;
 
 struct TrackerServer {
     socket: UdpSocket,
@@ -144,7 +144,15 @@ impl TrackerServer {
 
 fn main() {
     dotenv().ok();
-    let port = env::var("TRACKER_PORT").expect("TRACKER_PORT not defined as ENV variable.");
+    let port = match env::var("TRACKER_PORT") {
+        Ok(port) => port,
+        Err(_) => {
+            println!("Port not defined.\nSet TRACKER_PORT environment variable to the port that the server needs to listen to");
+            println!("For example, TRACKER_PORT=8982");
+            return;
+        }
+    };
+
     let tracker_addr = format!("0.0.0.0:{}", port);
     println!("Listening on {}", port);
 
